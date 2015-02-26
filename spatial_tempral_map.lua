@@ -3,15 +3,18 @@
 
 require 'nn'
 
-debug_mode = true
+dofile 'size.lua'
+
+debug_mode = false
+show_reshaped_x = debug_mode
 
 -- width of the 1d sequences to feed to the 1d convolution
 width = 8
 
-inp=2;  -- dimensionality of one sequence element
-outp=5; -- number of derived features for one sequence element
-kw=3;   -- kernel only operates on one sequence element per step
-dw=4;   -- we step once and go on to the next sequence element
+inp=5;  -- dimensionality of one sequence element
+outp=3; -- number of derived features for one sequence element
+kw=2;   -- kernel only operates on one sequence element per step
+dw=1;   -- we step once and go on to the next sequence element
 
 
 if inp == 1 then
@@ -54,11 +57,19 @@ end
 yt = mlp_t:forward(x)
 print(yt)
 
+height=1
 kh=1
 dh=1
 
 mlp_s = nn.Sequential()
-mlp_s:add(nn.Reshape(inp, 1, width))
+mlp_s:add(nn.Transpose({1,2}))
+mlp_s:add(nn.Reshape(inp, height, width))
+
+if show_reshaped_x then
+   print('reshaped x')
+   print(mlp_s:forward(x))
+end
+
 sc = nn.SpatialConvolution(inp, outp, kw, kh, dw, dh)
 
 if debug_mode then
@@ -68,7 +79,7 @@ if debug_mode then
    print(sc.bias)
 end
 
-sc.weight = weight:resize(outp, inp, 1, kw)
+sc.weight = weight:resize(outp, inp, kh, kw)
 sc.bias = bias
 
 if debug_mode then
