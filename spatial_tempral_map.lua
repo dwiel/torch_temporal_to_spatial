@@ -3,7 +3,7 @@
 
 require 'nn'
 
-debug_mode = false
+debug_mode = true
 
 -- width of the 1d sequences to feed to the 1d convolution
 width = 8
@@ -28,33 +28,29 @@ print(x)
 weight = torch.rand(outp, (inp * kw))
 bias = torch.rand(outp)
 
-function build_temporal_convolution(inp, outp, kw, dw, weight, bias)
-   mlp_t = nn.Sequential()
-   mlp_t:add(nn.Reshape(width, inp))
-   mlp_t:add(nn.TemporalConvolution(inp, outp, kw, dw))
+mlp_t = nn.Sequential()
+mlp_t:add(nn.Reshape(width, inp))
+conv = nn.TemporalConvolution(inp, outp, kw, dw)
+mlp_t:add(conv)
 
-   if debug_mode then
-      print('tc weight')
-      print(mlp_t[2].weight)
-      print('tc bias')
-      print(mlp_t[2].bias)
-   end
-   
-   -- update weight and bias tensors with known random values
-   mlp_t.modules[1].weight = weight
-   mlp_t.modules[1].bias = bias
-   
-   if debug_mode then
-      print('tc new weight')
-      print(mlp_t[2].weight)
-      print('tc new bias')
-      print(mlp_t[2].bias)
-   end
-   
-   return mlp_t
+if debug_mode then
+   print('tc weight')
+   print(conv.weight)
+   print('tc bias')
+   print(conv.bias)
 end
 
-mlp_t = build_temporal_convolution(inp, outp, kw, dw, weight, bias)
+-- update weight and bias tensors with known random values
+conv.weight = weight
+conv.bias = bias
+
+if debug_mode then
+   print('tc new weight')
+   print(conv.weight)
+   print('tc new bias')
+   print(conv.bias)
+end
+
 yt = mlp_t:forward(x)
 print(yt)
 
@@ -90,4 +86,5 @@ mlp_s:add(nn.Transpose({1,2}))
 ys = mlp_s:forward(x)
 print(ys)
 
-print((yt - ys):sum() < 0.000000001)
+diff = (yt - ys):abs():sum()
+print(diff, diff < 0.000000001)
