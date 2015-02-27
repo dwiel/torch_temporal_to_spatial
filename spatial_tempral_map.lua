@@ -9,10 +9,10 @@ debug_mode = false
 show_reshaped_x = debug_mode
 
 function temporal1d(width, inp, outp, kw, dw, weight, bias)
-   mlp_t = nn.Sequential()
-   mlp_t:add(nn.Reshape(width, inp))
+   model = nn.Sequential()
+   model:add(nn.Reshape(width, inp))
    conv = nn.TemporalConvolution(inp, outp, kw, dw)
-   mlp_t:add(conv)
+   model:add(conv)
    
    if debug_mode then
       -- print('tc weight')
@@ -47,7 +47,7 @@ function temporal1d(width, inp, outp, kw, dw, weight, bias)
       end
    end
    
-   return mlp_t
+   return model
 end
 
 function spatial1d(width, inp, outp, kw, dw, weight, bias)
@@ -55,15 +55,15 @@ function spatial1d(width, inp, outp, kw, dw, weight, bias)
    kh=1
    dh=1
 
-   mlp_s = nn.Sequential()
+   model = nn.Sequential()
    if inp ~= 1 then
-      mlp_s:add(nn.Transpose({1,2}))
+      model:add(nn.Transpose({1,2}))
    end
-   mlp_s:add(nn.Reshape(inp, height, width))
+   model:add(nn.Reshape(inp, height, width))
 
    if show_reshaped_x then
       print('reshaped x')
-      print(mlp_s:forward(x))
+      print(model:forward(x))
    end
 
    conv = nn.SpatialConvolution(inp, outp, kw, kh, dw, dh)
@@ -102,12 +102,12 @@ function spatial1d(width, inp, outp, kw, dw, weight, bias)
       end
    end
 
-   mlp_s:add(conv)
+   model:add(conv)
    owidth = (width - kw) / dw + 1
-   mlp_s:add(nn.View(outp, owidth))
-   mlp_s:add(nn.Transpose({1,2}))
+   model:add(nn.View(outp, owidth))
+   model:add(nn.Transpose({1,2}))
 
-   return mlp_s
+   return model
 end
 
 function assert_equal(width, inp, outp, kw, dw, weight, bias)
@@ -128,16 +128,16 @@ function assert_equal(width, inp, outp, kw, dw, weight, bias)
    end
    
    -- forward temporal1d
-   mlp_t = temporal1d(width, inp, outp, kw, dw, weight, bias)
-   yt = mlp_t:forward(x)
+   model = temporal1d(width, inp, outp, kw, dw, weight, bias)
+   yt = model:forward(x)
    if debug_mode then
       print('yt')
       print(yt)
    end
 
    -- forward spatial1d
-   mlp_s = spatial1d(width, inp, outp, kw, dw, weight, bias)
-   ys = mlp_s:forward(x)
+   model = spatial1d(width, inp, outp, kw, dw, weight, bias)
+   ys = model:forward(x)
    if debug_mode then
       print('ys')
       print(ys)
