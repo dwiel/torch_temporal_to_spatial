@@ -6,7 +6,6 @@ require 'nn'
 dofile 'size.lua'
 
 debug_mode = false
-show_reshaped_x = debug_mode
 
 function temporal1d(width, inp, outp, kw, dw, weight, bias)
    model = nn.Sequential()
@@ -15,11 +14,6 @@ function temporal1d(width, inp, outp, kw, dw, weight, bias)
    model:add(conv)
    
    if debug_mode then
-      -- print('temporal weight')
-      -- print(#conv.weight)
-      -- print('temporal bias')
-      -- print(#conv.bias)
-      
       old_weight_size = #conv.weight
       old_bias_size = #conv.bias
    end
@@ -29,9 +23,9 @@ function temporal1d(width, inp, outp, kw, dw, weight, bias)
    conv.bias = bias
    
    if debug_mode then
-      print('temporal new weight')
+      print('temporal weight')
       print(conv.weight)
-      print('temporal new bias')
+      print('temporal bias')
       print(conv.bias)
       
       if tostring(#conv.weight) ~= tostring(old_weight_size) then
@@ -61,7 +55,7 @@ function spatial1d(width, inp, outp, kw, dw, weight, bias)
    end
    model:add(nn.Reshape(inp, height, width))
 
-   if show_reshaped_x then
+   if debug_mode then
       print('reshaped x')
       print(model:forward(x))
    end
@@ -69,11 +63,6 @@ function spatial1d(width, inp, outp, kw, dw, weight, bias)
    conv = nn.SpatialConvolution(inp, outp, kw, kh, dw, dh)
 
    if debug_mode then
-      -- print('conv weight')
-      -- print(#conv.weight)
-      -- print('conv bias')
-      -- print(#conv.bias)
-      
       old_weight_size = #conv.weight
       old_bias_size = #conv.bias
    end
@@ -82,9 +71,9 @@ function spatial1d(width, inp, outp, kw, dw, weight, bias)
    conv.bias = bias
 
    if debug_mode then
-      print('conv new weight')
+      print('spatial weight')
       print(conv.weight)
-      print('conv new bias')
+      print('spatial bias')
       print(conv.bias)
 
       if tostring(#conv.weight) ~= tostring(old_weight_size) then
@@ -184,7 +173,6 @@ for i = 1, #rets do
    
    if rets[i] == false then
       debug_mode = true
-      show_reshaped_x = debug_mode
       
       test = tests[i]
       assert_equal(test.width, test.inp, test.outp, test.kw, test.dw)
