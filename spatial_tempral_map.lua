@@ -44,7 +44,7 @@ function temporal1d(width, inp, outp, kw, dw, weight, bias)
    return model
 end
 
-function spatial1d(width, inp, outp, kw, dw, weight, bias)
+function spatial1d(width, inp, outp, kw, dw)
    height=1
    kh=1
    dh=1
@@ -69,6 +69,20 @@ function spatial1d(width, inp, outp, kw, dw, weight, bias)
 
    conv = nn.SpatialConvolution(inp, outp, kw, kh, dw, dh)
 
+   model:add(conv)
+   owidth = (width - kw) / dw + 1
+   model:add(nn.View(outp, owidth))
+   print('outp', outp)
+   print('owidth', owidth)
+   model:add(nn.Transpose({1,2}))
+
+   return model
+end
+
+function spatial1d_setparams(model, inp, outp, kw, dw, weight, bias)
+   -- TODO: double check this is the right module to setparams
+   conv = model.modules[3]
+   
    if debug_mode then
       old_weight_size = #conv.weight
       old_bias_size = #conv.bias
@@ -111,15 +125,6 @@ function spatial1d(width, inp, outp, kw, dw, weight, bias)
          print('new', #conv.bias)
       end
    end
-
-   model:add(conv)
-   owidth = (width - kw) / dw + 1
-   model:add(nn.View(outp, owidth))
-   print('outp', outp)
-   print('owidth', owidth)
-   model:add(nn.Transpose({1,2}))
-
-   return model
 end
 
 function assert_equal(width, inp, outp, kw, dw, weight, bias)
@@ -149,7 +154,8 @@ function assert_equal(width, inp, outp, kw, dw, weight, bias)
    end
 
    -- forward spatial1d
-   model = spatial1d(width, inp, outp, kw, dw, weight, bias)
+   model = spatial1d(width, inp, outp, kw, dw)
+   spatial1d_setparams(model, inp, outp, kw, dw, weight, bias)
    ys = model:forward(x)
    if debug_mode then
       print('spatial forward')
