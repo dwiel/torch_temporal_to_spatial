@@ -135,7 +135,7 @@ function assert_equal(width, inp, outp, kw, dw, weight, bias)
    end
 
    -- forward Spatial1D
-   model = TemporalConvolutionMM(width, inp, outp, kw, dw)
+   model = TemporalConvolution(width, inp, outp, kw, dw)
    Spatial1D_setparams(model, inp, outp, kw, dw, weight, bias)
    Spatial1D_debug(model)
    ys = model:forward(x)
