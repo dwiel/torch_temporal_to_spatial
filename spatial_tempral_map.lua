@@ -16,6 +16,13 @@ outp=3; -- number of derived features for one sequence element
 kw=2;   -- kernel only operates on one sequence element per step
 dw=1;   -- we step once and go on to the next sequence element
 
+width = 8
+
+inp=1;  -- dimensionality of one sequence element
+outp=3; -- number of derived features for one sequence element
+kw=2;   -- kernel only operates on one sequence element per step
+dw=1;   -- we step once and go on to the next sequence element
+
 
 if inp == 1 then
    -- a special case such as for the first layer where the 1d input
@@ -31,69 +38,79 @@ print(x)
 weight = torch.rand(outp, (inp * kw))
 bias = torch.rand(outp)
 
-mlp_t = nn.Sequential()
-mlp_t:add(nn.Reshape(width, inp))
-conv = nn.TemporalConvolution(inp, outp, kw, dw)
-mlp_t:add(conv)
-
-if debug_mode then
-   print('tc weight')
-   print(conv.weight)
-   print('tc bias')
-   print(conv.bias)
+function temporal1d(inp, outp, kw, dw, weight, bias)
+   mlp_t = nn.Sequential()
+   mlp_t:add(nn.Reshape(width, inp))
+   conv = nn.TemporalConvolution(inp, outp, kw, dw)
+   mlp_t:add(conv)
+   
+   if debug_mode then
+      print('tc weight')
+      print(conv.weight)
+      print('tc bias')
+      print(conv.bias)
+   end
+   
+   -- update weight and bias tensors with known random values
+   conv.weight = weight
+   conv.bias = bias
+   
+   if debug_mode then
+      print('tc new weight')
+      print(conv.weight)
+      print('tc new bias')
+      print(conv.bias)
+   end
+   
+   return mlp_t
 end
 
--- update weight and bias tensors with known random values
-conv.weight = weight
-conv.bias = bias
-
-if debug_mode then
-   print('tc new weight')
-   print(conv.weight)
-   print('tc new bias')
-   print(conv.bias)
-end
-
+mlp_t = temporal1d(inp, outp, kw, dw, weight, bias)
 yt = mlp_t:forward(x)
 print(yt)
 
-height=1
-kh=1
-dh=1
+function spatial1d(inp, outp, kw, dw, weight, bias)
+   height=1
+   kh=1
+   dh=1
 
-mlp_s = nn.Sequential()
-mlp_s:add(nn.Transpose({1,2}))
-mlp_s:add(nn.Reshape(inp, height, width))
+   mlp_s = nn.Sequential()
+   -- mlp_s:add(nn.Transpose({1,2}))
+   mlp_s:add(nn.Reshape(inp, height, width))
 
-if show_reshaped_x then
-   print('reshaped x')
-   print(mlp_s:forward(x))
+   if show_reshaped_x then
+      print('reshaped x')
+      print(mlp_s:forward(x))
+   end
+
+   sc = nn.SpatialConvolution(inp, outp, kw, kh, dw, dh)
+
+   if debug_mode then
+      print('sc weight')
+      print(sc.weight)
+      print('sc bias')
+      print(sc.bias)
+   end
+
+   sc.weight = weight:resize(outp, inp, kh, kw)
+   sc.bias = bias
+
+   if debug_mode then
+      print('sc new weight')
+      print(sc.weight)
+      print('sc new bias')
+      print(sc.bias)
+   end
+
+   mlp_s:add(sc)
+   owidth = (width - kw) / dw + 1
+   mlp_s:add(nn.View(outp, owidth))
+   mlp_s:add(nn.Transpose({1,2}))
+
+   return mlp_s
 end
 
-sc = nn.SpatialConvolution(inp, outp, kw, kh, dw, dh)
-
-if debug_mode then
-   print('sc weight')
-   print(sc.weight)
-   print('sc bias')
-   print(sc.bias)
-end
-
-sc.weight = weight:resize(outp, inp, kh, kw)
-sc.bias = bias
-
-if debug_mode then
-   print('sc new weight')
-   print(sc.weight)
-   print('sc new bias')
-   print(sc.bias)
-end
-
-mlp_s:add(sc)
-owidth = (width - kw) / dw + 1
-mlp_s:add(nn.View(outp, owidth))
-mlp_s:add(nn.Transpose({1,2}))
-
+mlp_s = spatial1d(inp, outp, kw, dw, weight, bias)
 ys = mlp_s:forward(x)
 print(ys)
 
