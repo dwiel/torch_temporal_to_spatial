@@ -10,6 +10,10 @@ function temporal1d(width, inp, outp, kw, dw)
 end
 
 function temporal1d_setparams(conv, width, inp, outp, kw, dw, weight, bias)
+   -- set weight and bias in a specific way, and with debugging
+   -- enabled so that we can compare the forward pass with a different
+   -- algorithm working on the same parameters
+
    if debug_mode then
       old_weight_size = #conv.weight
       old_bias_size = #conv.bias
@@ -60,8 +64,6 @@ function spatial1d(width, inp, outp, kw, dw)
 end
 
 function spatial1d_debug(model)
-   -- TODO: use search of some kind instead of hard coded modules[1], modules[2]
-   
    if debug_mode then
       print('transposed x')
       print(model.modules[1]:forward(x))
@@ -74,6 +76,10 @@ function spatial1d_debug(model)
 end
 
 function spatial1d_setparams(model, inp, outp, kw, dw, weight, bias)
+   -- set weight and bias in a specific way, and with debugging
+   -- enabled so that we can compare the forward pass with a different
+   -- algorithm working on the same parameters
+
    for i, mod in pairs(model.modules) do
       if tostring(mod) == 'nn.SpatialConvolution' then
          conv = mod
