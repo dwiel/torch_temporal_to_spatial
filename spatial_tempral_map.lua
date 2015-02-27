@@ -177,11 +177,11 @@ local tests = {
    }, {
       width = 3, inp = 1, outp = 4, kw = 2, dw = 1,
    }, {
-      width = 3, inp = 3, outp = 5, kw = 3, dw = 1, -- fails
+      width = 3, inp = 3, outp = 5, kw = 3, dw = 1,
    }, {
-      width = 3, inp = 5, outp = 3, kw = 2, dw = 1, -- fails
+      width = 3, inp = 5, outp = 3, kw = 2, dw = 1,
    }, {
-      width = 3, inp = 4, outp = 1, kw = 2, dw = 1, -- fails
+      width = 3, inp = 4, outp = 1, kw = 2, dw = 1,
    }, {
       width = 8, inp = 1, outp = 1, kw = 2, dw = 1,
    }, {
@@ -194,6 +194,16 @@ local tests = {
       width = 3, inp = 1, outp = 2, kw = 1, dw = 1,
    }, {
       width = 8, inp = 1, outp = 1, kw = 1, dw = 1,
+   }, {
+      width = 8, inp = 1, outp = 1, kw = 1, dw = 2,
+   }, {
+      width = 8, inp = 1, outp = 1, kw = 2, dw = 2,
+   }, {
+      width = 8, inp = 1, outp = 2, kw = 2, dw = 2,
+   }, {
+      width = 8, inp = 2, outp = 2, kw = 2, dw = 2,
+   }, {
+      width = 8, inp = 2, outp = 1, kw = 2, dw = 2,
    }
 }
 
