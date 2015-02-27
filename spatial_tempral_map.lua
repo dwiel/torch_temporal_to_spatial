@@ -66,43 +66,43 @@ function spatial1d(width, inp, outp, kw, dw, weight, bias)
       print(mlp_s:forward(x))
    end
 
-   sc = nn.SpatialConvolution(inp, outp, kw, kh, dw, dh)
+   conv = nn.SpatialConvolution(inp, outp, kw, kh, dw, dh)
 
    if debug_mode then
-      -- print('sc weight')
-      -- print(#sc.weight)
-      -- print('sc bias')
-      -- print(#sc.bias)
+      -- print('conv weight')
+      -- print(#conv.weight)
+      -- print('conv bias')
+      -- print(#conv.bias)
       
-      old_weight_size = #sc.weight
-      old_bias_size = #sc.bias
+      old_weight_size = #conv.weight
+      old_bias_size = #conv.bias
    end
 
-   sc.weight = weight:resize(outp, inp, kh, kw)
-   sc.bias = bias
+   conv.weight = weight:resize(outp, inp, kh, kw)
+   conv.bias = bias
 
    if debug_mode then
-      print('sc new weight')
-      print(sc.weight)
-      print('sc new bias')
-      print(sc.bias)
+      print('conv new weight')
+      print(conv.weight)
+      print('conv new bias')
+      print(conv.bias)
 
-      if tostring(#sc.weight) ~= tostring(old_weight_size) then
+      if tostring(#conv.weight) ~= tostring(old_weight_size) then
          print('WARNING: spatial weight size changed')
 
          print('old', old_weight_size)
-         print('new', #sc.weight)
+         print('new', #conv.weight)
       end
 
-      if tostring(#sc.bias) ~= tostring(old_bias_size) then
+      if tostring(#conv.bias) ~= tostring(old_bias_size) then
          print('WARNING: spatial bias size changed')
          
          print('old', old_bias_size)
-         print('new', #sc.bias)
+         print('new', #conv.bias)
       end
    end
 
-   mlp_s:add(sc)
+   mlp_s:add(conv)
    owidth = (width - kw) / dw + 1
    mlp_s:add(nn.View(outp, owidth))
    mlp_s:add(nn.Transpose({1,2}))
