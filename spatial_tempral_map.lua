@@ -52,31 +52,30 @@ function spatial1d(width, inp, outp, kw, dw)
    model = nn.Sequential()
 
    model:add(nn.Transpose({1,2}))
-
-   if debug_mode then
-      print('transposed x')
-      print(model:forward(x))
-   end
-
    -- batchmode false keeps reshape from heuristically deciding that
    -- the first dimension is a batch
    model:add(nn.Reshape(inp, height, width, false))
-
-   if debug_mode then
-      print('reshaped x')
-      print(model:forward(x))
-   end
 
    conv = nn.SpatialConvolution(inp, outp, kw, kh, dw, dh)
 
    model:add(conv)
    owidth = (width - kw) / dw + 1
    model:add(nn.View(outp, owidth))
-   print('outp', outp)
-   print('owidth', owidth)
    model:add(nn.Transpose({1,2}))
 
    return model
+end
+
+function spatial1d_debug(model)
+   if debug_mode then
+      print('transposed x')
+      print(model.modules[1]:forward(x))
+   end
+
+   if debug_mode then
+      print('reshaped x')
+      print(model.modules[2]:forward(model.modules[1]:forward(x)))
+   end
 end
 
 function spatial1d_setparams(model, inp, outp, kw, dw, weight, bias)
@@ -156,6 +155,7 @@ function assert_equal(width, inp, outp, kw, dw, weight, bias)
    -- forward spatial1d
    model = spatial1d(width, inp, outp, kw, dw)
    spatial1d_setparams(model, inp, outp, kw, dw, weight, bias)
+   spatial1d_debug(model)
    ys = model:forward(x)
    if debug_mode then
       print('spatial forward')
