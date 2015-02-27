@@ -74,8 +74,8 @@ function spatial1d(width, inp, outp, kw, dw, weight, bias)
       -- print('sc bias')
       -- print(#sc.bias)
       
-      old_weight_size = #conv.weight
-      old_bias_size = #conv.bias
+      old_weight_size = #sc.weight
+      old_bias_size = #sc.bias
    end
 
    sc.weight = weight:resize(outp, inp, kh, kw)
