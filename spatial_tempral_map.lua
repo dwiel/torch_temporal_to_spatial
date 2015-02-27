@@ -7,11 +7,11 @@ dofile 'size.lua'
 
 debug_mode = false
 
-function temporal1d(width, inp, outp, kw, dw, weight, bias)
-   model = nn.Sequential()
-   conv = nn.TemporalConvolution(inp, outp, kw, dw)
-   model:add(conv)
-   
+function temporal1d(width, inp, outp, kw, dw)
+   return nn.TemporalConvolution(inp, outp, kw, dw)
+end
+
+function temporal1d_setparams(conv, width, inp, outp, kw, dw, weight, bias)
    if debug_mode then
       old_weight_size = #conv.weight
       old_bias_size = #conv.bias
@@ -39,8 +39,6 @@ function temporal1d(width, inp, outp, kw, dw, weight, bias)
          print('new', #conv.bias)
       end
    end
-   
-   return model
 end
 
 function spatial1d(width, inp, outp, kw, dw)
@@ -48,7 +46,7 @@ function spatial1d(width, inp, outp, kw, dw)
    kh=1
    dh=1
 
-   owidth = (width - kw) / dw + 1
+   output_width = (width - kw) / dw + 1
 
    -- batchmode false on Reshape keeps reshape from heuristically
    -- deciding that the first dimension is a batch
@@ -57,7 +55,7 @@ function spatial1d(width, inp, outp, kw, dw)
    model:add(nn.Transpose({1,2}))
    model:add(nn.Reshape(inp, height, width, false))
    model:add(nn.SpatialConvolution(inp, outp, kw, kh, dw, dh))
-   model:add(nn.View(outp, owidth))
+   model:add(nn.View(outp, output_width))
    model:add(nn.Transpose({1,2}))
 
    return model
@@ -141,7 +139,8 @@ function assert_equal(width, inp, outp, kw, dw, weight, bias)
    end
    
    -- forward temporal1d
-   model = temporal1d(width, inp, outp, kw, dw, weight, bias)
+   model = temporal1d(width, inp, outp, kw, dw)
+   temporal1d_setparams(model, width, inp, outp, kw, dw, weight, bias)
    yt = model:forward(x)
    if debug_mode then
       print('temporal forward')
