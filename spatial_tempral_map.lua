@@ -5,11 +5,11 @@ require 'nn'
 
 debug_mode = false
 
-function temporal1d(width, inp, outp, kw, dw)
+function Temporal1D(width, inp, outp, kw, dw)
    return nn.TemporalConvolution(inp, outp, kw, dw)
 end
 
-function temporal1d_setparams(conv, width, inp, outp, kw, dw, weight, bias)
+function Temporal1D_setparams(conv, width, inp, outp, kw, dw, weight, bias)
    -- set weight and bias in a specific way, and with debugging
    -- enabled so that we can compare the forward pass with a different
    -- algorithm working on the same parameters
@@ -43,27 +43,9 @@ function temporal1d_setparams(conv, width, inp, outp, kw, dw, weight, bias)
    end
 end
 
-function spatial1d(width, inp, outp, kw, dw)
-   height=1
-   kh=1
-   dh=1
+dofile 'TemporalConvolutionMM.lua'
 
-   output_width = (width - kw) / dw + 1
-
-   -- batchmode false on Reshape keeps reshape from heuristically
-   -- deciding that the first dimension is a batch
-
-   model = nn.Sequential()
-   model:add(nn.Transpose({1,2}))
-   model:add(nn.Reshape(inp, height, width, false))
-   model:add(nn.SpatialConvolution(inp, outp, kw, kh, dw, dh))
-   model:add(nn.View(outp, output_width))
-   model:add(nn.Transpose({1,2}))
-
-   return model
-end
-
-function spatial1d_debug(model)
+function Spatial1D_debug(model)
    if debug_mode then
       print('transposed x')
       print(model.modules[1]:forward(x))
@@ -75,13 +57,14 @@ function spatial1d_debug(model)
    end
 end
 
-function spatial1d_setparams(model, inp, outp, kw, dw, weight, bias)
+function Spatial1D_setparams(model, inp, outp, kw, dw, weight, bias)
    -- set weight and bias in a specific way, and with debugging
    -- enabled so that we can compare the forward pass with a different
    -- algorithm working on the same parameters
 
    for i, mod in pairs(model.modules) do
-      if tostring(mod) == 'nn.SpatialConvolution' then
+      if (tostring(mod) == 'nn.SpatialConvolution') or
+         (tostring(mod) == 'nn.SpatialConvolutionMM') then
          conv = mod
          break
       end
@@ -142,19 +125,19 @@ function assert_equal(width, inp, outp, kw, dw, weight, bias)
       print(x)
    end
    
-   -- forward temporal1d
-   model = temporal1d(width, inp, outp, kw, dw)
-   temporal1d_setparams(model, width, inp, outp, kw, dw, weight, bias)
+   -- forward Temporal1D
+   model = Temporal1D(width, inp, outp, kw, dw)
+   Temporal1D_setparams(model, width, inp, outp, kw, dw, weight, bias)
    yt = model:forward(x)
    if debug_mode then
       print('temporal forward')
       print(yt)
    end
 
-   -- forward spatial1d
-   model = spatial1d(width, inp, outp, kw, dw)
-   spatial1d_setparams(model, inp, outp, kw, dw, weight, bias)
-   spatial1d_debug(model)
+   -- forward Spatial1D
+   model = TemporalConvolutionMM(width, inp, outp, kw, dw)
+   Spatial1D_setparams(model, inp, outp, kw, dw, weight, bias)
+   Spatial1D_debug(model)
    ys = model:forward(x)
    if debug_mode then
       print('spatial forward')
