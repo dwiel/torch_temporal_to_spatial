@@ -3,8 +3,6 @@
 
 require 'nn'
 
-dofile 'size.lua'
-
 debug_mode = false
 
 function temporal1d(width, inp, outp, kw, dw)
