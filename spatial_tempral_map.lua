@@ -9,7 +9,6 @@ debug_mode = false
 
 function temporal1d(width, inp, outp, kw, dw, weight, bias)
    model = nn.Sequential()
-   model:add(nn.Reshape(width, inp))
    conv = nn.TemporalConvolution(inp, outp, kw, dw)
    model:add(conv)
    
@@ -65,6 +64,8 @@ function spatial1d(width, inp, outp, kw, dw)
 end
 
 function spatial1d_debug(model)
+   -- TODO: use search of some kind instead of hard coded modules[1], modules[2]
+   
    if debug_mode then
       print('transposed x')
       print(model.modules[1]:forward(x))
@@ -77,8 +78,12 @@ function spatial1d_debug(model)
 end
 
 function spatial1d_setparams(model, inp, outp, kw, dw, weight, bias)
-   -- TODO: double check this is the right module to setparams
-   conv = model.modules[3]
+   for i, mod in pairs(model.modules) do
+      if tostring(mod) == 'nn.SpatialConvolution' then
+         conv = mod
+         break
+      end
+   end
    
    if debug_mode then
       old_weight_size = #conv.weight
@@ -126,14 +131,7 @@ end
 
 function assert_equal(width, inp, outp, kw, dw, weight, bias)
    -- build random tensors
-   if inp == 1 and false then
-      -- a special case such as for the first layer where the 1d input
-      -- data hasnt yet been through any convolutions and there is no
-      -- frame dimension
-      x = torch.rand(width)
-   else
-      x = torch.rand(width, inp)
-   end
+   x = torch.rand(width, inp)
    weight = torch.rand(outp, (inp * kw))
    bias = torch.rand(outp)
 
@@ -171,8 +169,6 @@ function assert_equal(width, inp, outp, kw, dw, weight, bias)
    return pass
 end
 
--- currently fails:
--- inp > 1 and kw > 1
 local tests = {
    {
       width = 2, inp = 3, outp = 1, kw = 2, dw = 1,
