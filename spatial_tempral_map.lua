@@ -15,9 +15,9 @@ function temporal1d(width, inp, outp, kw, dw, weight, bias)
    model:add(conv)
    
    if debug_mode then
-      -- print('tc weight')
+      -- print('temporal weight')
       -- print(#conv.weight)
-      -- print('tc bias')
+      -- print('temporal bias')
       -- print(#conv.bias)
       
       old_weight_size = #conv.weight
@@ -29,9 +29,9 @@ function temporal1d(width, inp, outp, kw, dw, weight, bias)
    conv.bias = bias
    
    if debug_mode then
-      print('tc new weight')
+      print('temporal new weight')
       print(conv.weight)
-      print('tc new bias')
+      print('temporal new bias')
       print(conv.bias)
       
       if tostring(#conv.weight) ~= tostring(old_weight_size) then
@@ -131,7 +131,7 @@ function assert_equal(width, inp, outp, kw, dw, weight, bias)
    model = temporal1d(width, inp, outp, kw, dw, weight, bias)
    yt = model:forward(x)
    if debug_mode then
-      print('yt')
+      print('temporal forward')
       print(yt)
    end
 
@@ -139,7 +139,7 @@ function assert_equal(width, inp, outp, kw, dw, weight, bias)
    model = spatial1d(width, inp, outp, kw, dw, weight, bias)
    ys = model:forward(x)
    if debug_mode then
-      print('ys')
+      print('spatial forward')
       print(ys)
    end
 
