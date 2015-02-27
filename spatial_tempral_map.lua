@@ -8,37 +8,7 @@ dofile 'size.lua'
 debug_mode = false
 show_reshaped_x = debug_mode
 
--- width of the 1d sequences to feed to the 1d convolution
-width = 8
-
-inp=5;  -- dimensionality of one sequence element
-outp=3; -- number of derived features for one sequence element
-kw=2;   -- kernel only operates on one sequence element per step
-dw=1;   -- we step once and go on to the next sequence element
-
-width = 8
-
-inp=1;  -- dimensionality of one sequence element
-outp=3; -- number of derived features for one sequence element
-kw=2;   -- kernel only operates on one sequence element per step
-dw=1;   -- we step once and go on to the next sequence element
-
-
-if inp == 1 then
-   -- a special case such as for the first layer where the 1d input
-   -- data hasnt yet been through any convolutions
-   x = torch.rand(width)
-else
-   x = torch.rand(width, inp)
-end
-
-print('x')
-print(x)
-
-weight = torch.rand(outp, (inp * kw))
-bias = torch.rand(outp)
-
-function temporal1d(inp, outp, kw, dw, weight, bias)
+function temporal1d(width, inp, outp, kw, dw, weight, bias)
    mlp_t = nn.Sequential()
    mlp_t:add(nn.Reshape(width, inp))
    conv = nn.TemporalConvolution(inp, outp, kw, dw)
@@ -65,17 +35,15 @@ function temporal1d(inp, outp, kw, dw, weight, bias)
    return mlp_t
 end
 
-mlp_t = temporal1d(inp, outp, kw, dw, weight, bias)
-yt = mlp_t:forward(x)
-print(yt)
-
-function spatial1d(inp, outp, kw, dw, weight, bias)
+function spatial1d(width, inp, outp, kw, dw, weight, bias)
    height=1
    kh=1
    dh=1
 
    mlp_s = nn.Sequential()
-   -- mlp_s:add(nn.Transpose({1,2}))
+   if inp ~= 1 then
+      mlp_s:add(nn.Transpose({1,2}))
+   end
    mlp_s:add(nn.Reshape(inp, height, width))
 
    if show_reshaped_x then
@@ -110,9 +78,85 @@ function spatial1d(inp, outp, kw, dw, weight, bias)
    return mlp_s
 end
 
-mlp_s = spatial1d(inp, outp, kw, dw, weight, bias)
-ys = mlp_s:forward(x)
-print(ys)
+function assert_equal(width, inp, outp, kw, dw, weight, bias)
+   -- build random tensors
+   if inp == 1 then
+      -- a special case such as for the first layer where the 1d input
+      -- data hasnt yet been through any convolutions
+      x = torch.rand(width)
+   else
+      x = torch.rand(width, inp)
+   end
+   weight = torch.rand(outp, (inp * kw))
+   bias = torch.rand(outp)
 
-diff = (yt - ys):abs():sum()
-print(diff, diff < 0.000000001)
+   if debug_mode then
+      print('x')
+      print(x)
+   end
+   
+   -- forward temporal1d
+   mlp_t = temporal1d(width, inp, outp, kw, dw, weight, bias)
+   yt = mlp_t:forward(x)
+   if debug_mode then
+      print('yt')
+      print(yt)
+   end
+
+   -- forward spatial1d
+   mlp_s = spatial1d(width, inp, outp, kw, dw, weight, bias)
+   ys = mlp_s:forward(x)
+   if debug_mode then
+      print('ys')
+      print(ys)
+   end
+
+   -- check diff
+   diff = (yt - ys):abs():sum()
+   pass = diff < 0.000000001
+   
+   if debug_mode then
+      print(diff, pass)
+   end
+
+   return pass
+end
+
+local tests = {
+   {
+      width = 2, inp = 5, outp = 3, kw = 2, dw = 1,
+   }, {
+      width = 3, inp = 4, outp = 1, kw = 2, dw = 1,
+   }, {
+      width = 8, inp = 1, outp = 1, kw = 2, dw = 1,
+   }, {
+      width = 8, inp = 5, outp = 3, kw = 1, dw = 1,
+   }, {
+      width = 8, inp = 5, outp = 1, kw = 1, dw = 1,
+   }, {
+      width = 8, inp = 1, outp = 3, kw = 2, dw = 1,
+   }, {
+      width = 8, inp = 1, outp = 3, kw = 1, dw = 1,
+   }, {
+      width = 8, inp = 1, outp = 1, kw = 1, dw = 1,
+   }
+}
+local rets = {}
+for _, test in pairs(tests) do
+   rets[#rets + 1] = assert_equal(test.width, test.inp, test.outp, test.kw, test.dw)
+end
+
+for i = 1, #rets do
+   -- print(tests[i])
+   -- print(rets[i])
+   
+   if rets[i] == false then
+      debug_mode = true
+      show_reshaped_x = debug_mode
+      
+      test = tests[i]
+      assert_equal(test.width, test.inp, test.outp, test.kw, test.dw)
+   end
+end
+
+print(rets)
