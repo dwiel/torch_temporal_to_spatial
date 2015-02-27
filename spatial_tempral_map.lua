@@ -15,10 +15,13 @@ function temporal1d(width, inp, outp, kw, dw, weight, bias)
    mlp_t:add(conv)
    
    if debug_mode then
-      print('tc weight')
-      print(conv.weight)
-      print('tc bias')
-      print(conv.bias)
+      -- print('tc weight')
+      -- print(#conv.weight)
+      -- print('tc bias')
+      -- print(#conv.bias)
+      
+      old_weight_size = #conv.weight
+      old_bias_size = #conv.bias
    end
    
    -- update weight and bias tensors with known random values
@@ -30,6 +33,18 @@ function temporal1d(width, inp, outp, kw, dw, weight, bias)
       print(conv.weight)
       print('tc new bias')
       print(conv.bias)
+      
+      if tostring(#conv.weight) ~= tostring(old_weight_size) then
+         print('WARNING: temporal weight size changed')
+         print('old', old_weight_size)
+         print('new', #conv.weight)
+      end
+
+      if tostring(#conv.bias) ~= tostring(old_bias_size) then
+         print('WARNING: temporal bias size changed')
+         print('old', old_bias_size)
+         print('new', #conv.bias)
+      end
    end
    
    return mlp_t
@@ -54,10 +69,13 @@ function spatial1d(width, inp, outp, kw, dw, weight, bias)
    sc = nn.SpatialConvolution(inp, outp, kw, kh, dw, dh)
 
    if debug_mode then
-      print('sc weight')
-      print(sc.weight)
-      print('sc bias')
-      print(sc.bias)
+      -- print('sc weight')
+      -- print(#sc.weight)
+      -- print('sc bias')
+      -- print(#sc.bias)
+      
+      old_weight_size = #conv.weight
+      old_bias_size = #conv.bias
    end
 
    sc.weight = weight:resize(outp, inp, kh, kw)
@@ -68,6 +86,20 @@ function spatial1d(width, inp, outp, kw, dw, weight, bias)
       print(sc.weight)
       print('sc new bias')
       print(sc.bias)
+
+      if tostring(#sc.weight) ~= tostring(old_weight_size) then
+         print('WARNING: spatial weight size changed')
+
+         print('old', old_weight_size)
+         print('new', #sc.weight)
+      end
+
+      if tostring(#sc.bias) ~= tostring(old_bias_size) then
+         print('WARNING: spatial bias size changed')
+         
+         print('old', old_bias_size)
+         print('new', #sc.bias)
+      end
    end
 
    mlp_s:add(sc)
