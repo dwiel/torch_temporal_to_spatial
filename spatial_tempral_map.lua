@@ -74,7 +74,21 @@ function spatial1d(width, inp, outp, kw, dw, weight, bias)
       old_bias_size = #conv.bias
    end
 
-   conv.weight = weight:resize(outp, inp, kh, kw)
+   -- reshape splits [1,2,3,4,5,6] into [[1,2],[3,4],[5,6]] instead of
+   -- [[1,4],[2,5],[3,6]] or something like that
+   
+   -- conv.weight = weight:reshape(outp, inp, kh, kw)
+   local w = torch.Tensor(outp, inp, kh, kw)
+   for o = 1, outp do
+      for i = 1, inp do
+         for j = 1, kw do
+            -- this one is equiv to the above reshape
+            -- w[o][i][1][j] = weight[o][(i-1)*kw + j]
+            w[o][i][1][j] = weight[o][(j-1)*inp + i]
+         end
+      end
+   end
+   conv.weight = w
    conv.bias = bias
 
    if debug_mode then
@@ -157,7 +171,7 @@ end
 -- inp > 1 and kw > 1
 local tests = {
    {
-      width = 2, inp = 2, outp = 1, kw = 2, dw = 1,
+      width = 2, inp = 3, outp = 1, kw = 2, dw = 1,
    }, {
       width = 2, inp = 1, outp = 1, kw = 2, dw = 1,
    }, {
@@ -182,6 +196,7 @@ local tests = {
       width = 8, inp = 1, outp = 1, kw = 1, dw = 1,
    }
 }
+
 debug_mode = true
 local rets = {}
 for _, test in pairs(tests) do
