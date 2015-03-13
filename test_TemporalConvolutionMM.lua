@@ -114,9 +114,13 @@ function Spatial1D_setparams(model, inp, outp, kw, dw, weight, bias)
    end
 end
 
-function assert_equal(width, inp, outp, kw, dw, weight, bias)
+function assert_equal(bs, width, inp, outp, kw, dw, weight, bias)
    -- build random tensors
-   x = torch.rand(width, inp)
+   if bs > 1 then
+      x = torch.rand(bs, width, inp)
+   else
+      x = torch.rand(width, inp)
+   end
    weight = torch.rand(outp, (inp * kw))
    bias = torch.rand(outp)
 
@@ -135,7 +139,7 @@ function assert_equal(width, inp, outp, kw, dw, weight, bias)
    end
 
    -- forward Spatial1D
-   model = TemporalConvolution(width, inp, outp, kw, dw)
+   model = TemporalConvolution(bs, width, inp, outp, kw, dw)
    Spatial1D_setparams(model, inp, outp, kw, dw, weight, bias)
    Spatial1D_debug(model)
    ys = model:forward(x)
@@ -147,8 +151,12 @@ function assert_equal(width, inp, outp, kw, dw, weight, bias)
    -- check diff
    diff = (yt - ys):abs():sum()
    pass = diff < 0.000000001
+
+   -- check shape
+   pass = pass and (tostring(#yt) == tostring(#ys))
    
    if debug_mode then
+      print(#yt, #ys)
       print(diff, pass)
    end
 
@@ -157,39 +165,41 @@ end
 
 local tests = {
    {
-      width = 2, inp = 3, outp = 1, kw = 2, dw = 1,
+      bs = 1, width = 2, inp = 3, outp = 1, kw = 2, dw = 1,
    }, {
-      width = 2, inp = 1, outp = 1, kw = 2, dw = 1,
+      bs = 1, width = 2, inp = 1, outp = 1, kw = 2, dw = 1,
    }, {
-      width = 3, inp = 1, outp = 4, kw = 2, dw = 1,
+      bs = 1, width = 3, inp = 1, outp = 4, kw = 2, dw = 1,
    }, {
-      width = 3, inp = 3, outp = 5, kw = 3, dw = 1,
+      bs = 1, width = 3, inp = 3, outp = 5, kw = 3, dw = 1,
    }, {
-      width = 3, inp = 5, outp = 3, kw = 2, dw = 1,
+      bs = 1, width = 3, inp = 5, outp = 3, kw = 2, dw = 1,
    }, {
-      width = 3, inp = 4, outp = 1, kw = 2, dw = 1,
+      bs = 1, width = 3, inp = 4, outp = 1, kw = 2, dw = 1,
    }, {
-      width = 8, inp = 1, outp = 1, kw = 2, dw = 1,
+      bs = 1, width = 8, inp = 1, outp = 1, kw = 2, dw = 1,
    }, {
-      width = 8, inp = 5, outp = 3, kw = 1, dw = 1,
+      bs = 1, width = 8, inp = 5, outp = 3, kw = 1, dw = 1,
    }, {
-      width = 3, inp = 2, outp = 1, kw = 1, dw = 1,
+      bs = 1, width = 3, inp = 2, outp = 1, kw = 1, dw = 1,
    }, {
-      width = 3, inp = 1, outp = 2, kw = 1, dw = 1,
+      bs = 1, width = 3, inp = 1, outp = 2, kw = 1, dw = 1,
    }, {
-      width = 3, inp = 1, outp = 2, kw = 1, dw = 1,
+      bs = 1, width = 3, inp = 1, outp = 2, kw = 1, dw = 1,
    }, {
-      width = 8, inp = 1, outp = 1, kw = 1, dw = 1,
+      bs = 1, width = 8, inp = 1, outp = 1, kw = 1, dw = 1,
    }, {
-      width = 8, inp = 1, outp = 1, kw = 1, dw = 2,
+      bs = 1, width = 8, inp = 1, outp = 1, kw = 1, dw = 2,
    }, {
-      width = 8, inp = 1, outp = 1, kw = 2, dw = 2,
+      bs = 1, width = 8, inp = 1, outp = 1, kw = 2, dw = 2,
    }, {
-      width = 8, inp = 1, outp = 2, kw = 2, dw = 2,
+      bs = 1, width = 8, inp = 1, outp = 2, kw = 2, dw = 2,
    }, {
-      width = 8, inp = 2, outp = 2, kw = 2, dw = 2,
+      bs = 1, width = 8, inp = 2, outp = 2, kw = 2, dw = 2,
    }, {
-      width = 8, inp = 2, outp = 1, kw = 2, dw = 2,
+      bs = 1, width = 8, inp = 2, outp = 1, kw = 2, dw = 2,
+   }, {
+      bs = 15, width = 8, inp = 2, outp = 1, kw = 2, dw = 2,
    }
 }
 
@@ -197,7 +207,7 @@ debug_mode = true
 local rets = {}
 for _, test in pairs(tests) do
    print(test)
-   rets[#rets + 1] = assert_equal(test.width, test.inp, test.outp, test.kw, test.dw)
+   rets[#rets + 1] = assert_equal(test.bs, test.width, test.inp, test.outp, test.kw, test.dw)
 end
 
 if debug_mode == false then
@@ -207,7 +217,7 @@ if debug_mode == false then
          
          test = tests[i]
          print(test)
-         assert_equal(test.width, test.inp, test.outp, test.kw, test.dw)
+         assert_equal(test.bs, test.width, test.inp, test.outp, test.kw, test.dw)
       end
    end
 end

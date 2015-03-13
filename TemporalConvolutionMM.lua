@@ -1,6 +1,6 @@
 require 'nn'
 
-function _SpatialTemporalConvolution(width, inp, outp, kw, dw, SpatialConvolution)
+function _SpatialTemporalConvolution(bs, width, inp, outp, kw, dw, SpatialConvolution)
    -- make sure that SpatialConvolution is one of the two valid ones
    assert(
       (SpatialConvolution == nn.SpatialConvolution) or
@@ -17,21 +17,34 @@ function _SpatialTemporalConvolution(width, inp, outp, kw, dw, SpatialConvolutio
    -- deciding that the first dimension is a batch
 
    model = nn.Sequential()
-   model:add(nn.Transpose({1,2}))
-   model:add(nn.Reshape(inp, height, width, false))
+   if bs == 1 then
+      model:add(nn.Transpose({1,2}))
+      model:add(nn.Reshape(inp, height, width, false))
+   else
+      model:add(nn.Transpose({2,3}))
+      model:add(nn.Reshape(bs, inp, height, width, false))
+   end
    model:add(SpatialConvolution(inp, outp, kw, kh, dw, dh))
-   model:add(nn.View(outp, output_width))
-   model:add(nn.Transpose({1,2}))
+   if bs == 1 then
+      -- somehow, setting NumInputDims to 1 gets the output to be size
+      -- 2 ... I think it is treating the first dim as a batch, or
+      -- something
+      model:add(nn.View(outp, output_width):setNumInputDims(1))
+      model:add(nn.Transpose({1,2}))
+   else
+      model:add(nn.View(bs, outp, output_width))
+      model:add(nn.Transpose({2,3}))
+   end
 
    return model
 end
 
-function TemporalConvolutionMM(width, inp, outp, kw, dw)
+function TemporalConvolutionMM(bs, width, inp, outp, kw, dw)
    -- use nn.SpatialConvolutionMM
-   return _SpatialTemporalConvolution(width, inp, outp, kw, dw, nn.SpatialConvolutionMM)
+   return _SpatialTemporalConvolution(bs, width, inp, outp, kw, dw, nn.SpatialConvolutionMM)
 end
 
-function TemporalConvolution(width, inp, outp, kw, dw)
+function TemporalConvolution(bs, width, inp, outp, kw, dw)
    -- use nn.SpatialConvolution
-   return _SpatialTemporalConvolution(width, inp, outp, kw, dw, nn.SpatialConvolution)
+   return _SpatialTemporalConvolution(bs, width, inp, outp, kw, dw, nn.SpatialConvolution)
 end
