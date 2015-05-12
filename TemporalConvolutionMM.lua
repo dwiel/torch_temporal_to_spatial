@@ -48,3 +48,22 @@ function TemporalConvolution(bs, width, inp, outp, kw, dw)
    -- use nn.SpatialConvolution
    return _SpatialTemporalConvolution(bs, width, inp, outp, kw, dw, nn.SpatialConvolution)
 end
+
+-- TConv will use the best class for the job depending on weather or
+-- not CUDA is being used
+
+if cuda then
+   require 'cunn'
+
+   cutorch.setDevice(arg[1] or 1)
+   print('DEVID = ' .. cutorch.getDevice())
+
+   TConv = TemporalConvolutionMM
+else
+   -- a wrapper which ignores bs and width parameters so that the
+   -- function call signiure is the same as TemporalConvolutionMM
+   TConv = function (bs, width, inp, outp, kw, dw)
+      return nn.TemporalConvolution(inp, outp, kw, dw)
+   end
+end
+
